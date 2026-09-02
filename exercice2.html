@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exercice 2 — AR.js + marqueur Hiro</title>
+  <!-- A-Frame doit être chargé AVANT AR.js -->
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <!-- AR.js 3.4.7 (build "aframe-ar" = marker based, sans NFT) -->
+  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar.js"></script>
+  <style> body { margin: 0; overflow: hidden; } </style>
+</head>
+<body>
+  <!-- embedded : la scène s'insère dans la page au lieu de prendre tout l'écran en VR.
+       arjs : active le suivi ; sourceType webcam = flux caméra ; on désactive l'UI VR. -->
+  <a-scene
+    embedded
+    vr-mode-ui="enabled: false"
+    arjs="sourceType: webcam; debugUIEnabled: false;"
+    renderer="antialias: true; alpha: true">
+
+    <!-- Marqueur Hiro : tout ce qui est à l'intérieur n'apparaît que lorsqu'il est détecté -->
+    <a-marker preset="hiro">
+      <!-- Boîte semi-transparente qui tourne automatiquement sur elle-même.
+           position y = 0.5 pour poser la boîte sur le marqueur.
+           opacity + transparent : semi-transparence.
+           animation : rotation continue de 360° en boucle. -->
+      <a-box
+        position="0 0.5 0"
+        material="color: #2a9d8f; opacity: 0.5; transparent: true"
+        animation="property: rotation; to: 0 360 0; loop: true; dur: 4000; easing: linear">
+      </a-box>
+    </a-marker>
+
+    <!-- Caméra AR : c'est le flux vidéo qui sert de fond -->
+    <a-entity camera></a-entity>
+
+  </a-scene>
+</body>
+</html>
