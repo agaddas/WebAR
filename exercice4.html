@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exercice 4 — Marqueur personnalisé</title>
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar.js"></script>
+  <style> body { margin: 0; overflow: hidden; } </style>
+</head>
+<body>
+  <a-scene
+    embedded
+    vr-mode-ui="enabled: false"
+    arjs="sourceType: webcam; debugUIEnabled: false;"
+    renderer="antialias: true; alpha: true">
+
+    <!-- Marqueur PERSONNALISÉ :
+         type="pattern"  + url du fichier .patt généré avec le Marker Training tool. -->
+    <a-marker
+      type="pattern"
+      url="pattern-marker.patt"
+      smooth="true" smoothCount="5" smoothTolerance="0.01" smoothThreshold="2">
+
+      <!-- Objet 3D DIFFÉRENT de la boîte : un tore (donut) qui tourne.
+           rotation -90 sur X pour le coucher à plat sur le marqueur. -->
+      <a-torus
+        color="#f4a261"
+        radius="0.5" radius-tubular="0.1"
+        position="0 0.4 0" rotation="-90 0 0"
+        animation="property: rotation; to: -90 360 0; loop: true; dur: 5000; easing: linear">
+      </a-torus>
+
+    </a-marker>
+
+    <a-entity camera></a-entity>
+
+  </a-scene>
+</body>
+</html>
