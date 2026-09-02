@@ -1,0 +1,38 @@
+ù<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exercice 1 — Scène 3D A-Frame</title>
+  <!-- A-Frame : moteur de scène 3D / WebXR -->
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+</head>
+<body>
+  <a-scene background="color: #101418">
+
+    <!-- Trois boîtes de couleurs différentes, à des positions différentes.
+         Elles lévitent à y = 2 (2 unités au-dessus du plan situé à y = 0). -->
+    <a-box position="-3 2 0" color="#e63946" depth="1" height="1" width="1"></a-box>
+    <a-box position="0 2 0"  color="#2a9d8f" depth="1" height="1" width="1"></a-box>
+    <a-box position="3 2 0"  color="#457b9d" depth="1" height="1" width="1"></a-box>
+
+    <!-- Plan horizontal servant de surface de base (couché à plat via rotation -90° sur X) -->
+    <a-plane position="0 0 0" rotation="-90 0 0" width="20" height="20" color="#3a4750"></a-plane>
+
+    <!-- Un peu de lumière pour bien voir les volumes -->
+    <a-light type="ambient" color="#8892a0"></a-light>
+    <a-light type="directional" color="#ffffff" intensity="0.8" position="4 8 6"></a-light>
+
+    <!-- Caméra : 10 unités de hauteur, 15 unités de distance, inclinée vers le centre du plan.
+         rotation X ≈ -34° = atan2(10, 15) pour viser l'origine (0 0 0).
+         look-controls reste actif : on peut faire pivoter la vue à la souris. -->
+    <a-entity camera
+              position="0 10 15"
+              rotation="-34 0 0"
+              look-controls="reverseMouseDrag: true"
+              wasd-controls="acceleration: 40">
+    </a-entity>
+
+  </a-scene>
+</body>
+</html>
