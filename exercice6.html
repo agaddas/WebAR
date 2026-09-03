@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exercice 6 — Interface DOM overlay</title>
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; font-family: system-ui, sans-serif; }
+
+    /* Panneau de contrôle superposé au flux caméra.
+       Caché par défaut : n'apparaît que quand le marqueur Hiro est détecté. */
+    #ui {
+      position: fixed;
+      left: 50%; bottom: 22px; transform: translateX(-50%);
+      width: min(340px, 90vw);
+      padding: 16px 18px;
+      background: rgba(16, 20, 24, 0.82);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      color: #f2f4f5;
+      z-index: 999;
+      display: none;              /* masqué tant que markerFound n'a pas eu lieu */
+    }
+    #ui.visible { display: block; }
+
+    #ui label { display: block; font-size: .82rem; margin-bottom: 8px; color: #b7c0c8; }
+    #size { width: 100%; accent-color: #38bdf8; }
+    #sizeVal { color: #38bdf8; font-variant-numeric: tabular-nums; }
+
+    .swatches { display: flex; gap: 10px; margin-top: 14px; }
+    .swatch {
+      flex: 1; height: 40px; border: 2px solid transparent; border-radius: 10px;
+      cursor: pointer;
+    }
+    .swatch.active { border-color: #fff; }
+  </style>
+</head>
+<body>
+
+  <a-scene
+    embedded
+    vr-mode-ui="enabled: false"
+    arjs="sourceType: webcam; debugUIEnabled: false;"
+    renderer="antialias: true; alpha: true">
+
+    <!-- id="marker" pour écouter markerFound / markerLost -->
+    <a-marker id="marker" preset="hiro">
+      <a-box id="box"
+             position="0 0.5 0"
+             scale="1 1 1"
+             material="color: #e63946">
+      </a-box>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <!-- ===== Interface HTML (DOM overlay) ===== -->
+  <div id="ui">
+    <label>Taille de la boîte : <span id="sizeVal">1.0</span></label>
+    <input id="size" type="range" min="0.1" max="3.0" step="0.1" value="1.0">
+
+    <label style="margin-top:14px;">Couleur</label>
+    <div class="swatches">
+      <div class="swatch active" style="background:#e63946" data-color="#e63946"></div>
+      <div class="swatch"        style="background:#2a9d8f" data-color="#2a9d8f"></div>
+      <div class="swatch"        style="background:#457b9d" data-color="#457b9d"></div>
+    </div>
+  </div>
+
+  <script>
+    var marker  = document.getElementById('marker');
+    var box     = document.getElementById('box');
+    var ui      = document.getElementById('ui');
+    var size    = document.getElementById('size');
+    var sizeVal = document.getElementById('sizeVal');
+    var swatches = document.querySelectorAll('.swatch');
+
+    // --- Afficher / masquer l'UI selon la détection du marqueur ---
+    marker.addEventListener('markerFound', function () { ui.classList.add('visible'); });
+    marker.addEventListener('markerLost',  function () { ui.classList.remove('visible'); });
+
+    // --- Slider : change la taille de la boîte en temps réel ---
+    size.addEventListener('input', function () {
+      var s = parseFloat(this.value);
+      sizeVal.textContent = s.toFixed(1);
+      box.setAttribute('scale', s + ' ' + s + ' ' + s);
+    });
+
+    // --- Palette : change la couleur immédiatement ---
+    swatches.forEach(function (sw) {
+      sw.addEventListener('click', function () {
+        box.setAttribute('material', 'color', sw.dataset.color);
+        swatches.forEach(function (o) { o.classList.remove('active'); });
+        sw.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>
