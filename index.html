@@ -1,9 +1,279 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <title>TP1 Web AR</title>
-    </head>
-    <body>
-        <p>Hello World</p>
-    </body>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TP01 — WebAR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --paper:#ffffff;
+      --ink:#000000;
+      --grid:#e7e7e1;      /* trait de fond très léger, comme du papier millimétré */
+      --x:#e5484d;         /* axe X — rouge */
+      --y:#2f9e44;         /* axe Y — vert */
+      --z:#3552d6;         /* axe Z — bleu */
+      --mono:"IBM Plex Mono", ui-monospace, monospace;
+      --sans:"IBM Plex Sans", system-ui, sans-serif;
+    }
+
+    *{box-sizing:border-box;}
+    html,body{margin:0;}
+    body{
+      background:var(--paper);
+      color:var(--ink);
+      font-family:var(--sans);
+      line-height:1.5;
+      /* papier millimétré discret */
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size:28px 28px;
+    }
+
+    /* Cadre de la feuille + marques de repérage (crop marks) aux quatre coins */
+    .sheet{
+      position:relative;
+      max-width:980px;
+      margin:0 auto;
+      padding:56px 40px 40px;
+    }
+    .crop{position:fixed;width:22px;height:22px;pointer-events:none;z-index:5;}
+    .crop::before,.crop::after{content:"";position:absolute;background:var(--ink);}
+    .crop::before{width:22px;height:2px;}
+    .crop::after{width:2px;height:22px;}
+    .crop.tl{top:16px;left:16px;}
+    .crop.tr{top:16px;right:16px;}
+    .crop.tr::before{right:0;} .crop.tr::after{right:0;}
+    .crop.bl{bottom:16px;left:16px;} .crop.bl::before{bottom:0;} .crop.bl::after{bottom:0;}
+    .crop.br{bottom:16px;right:16px;} .crop.br::before{right:0;bottom:0;} .crop.br::after{right:0;bottom:0;}
+
+    /* ---- En-tête : marqueur "détecté" + titre, en asymétrie ---- */
+    header{
+      display:grid;
+      grid-template-columns:132px 1fr;
+      gap:26px;
+      align-items:center;
+      border-bottom:2px solid var(--ink);
+      padding-bottom:26px;
+    }
+    .ref{font-family:var(--mono);font-size:12px;letter-spacing:.02em;color:var(--ink);}
+    h1{
+      font-family:var(--mono);
+      font-weight:600;
+      font-size:clamp(30px,6vw,52px);
+      line-height:1.02;
+      margin:6px 0 10px;
+    }
+    header p{margin:0;max-width:52ch;color:#222;}
+
+    /* ---- Grille des exercices : tuiles-marqueurs ---- */
+    .board{
+      list-style:none;padding:0;margin:34px 0 0;
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
+      gap:0;                     /* les tuiles se touchent, comme une planche */
+      border:2px solid var(--ink);
+      border-right:0;border-bottom:0;
+    }
+    .tile{
+      position:relative;
+      border-right:2px solid var(--ink);
+      border-bottom:2px solid var(--ink);
+    }
+    .tile a{
+      display:block;text-decoration:none;color:inherit;
+      padding:20px 18px 22px;
+      min-height:186px;
+      outline-offset:-3px;
+    }
+    .tile a:focus-visible{outline:3px solid var(--z);}
+    .idx{font-family:var(--mono);font-size:13px;color:#999;}
+    .glyph{height:64px;margin:12px 0 16px;}
+    .glyph svg{height:64px;width:auto;display:block;}
+    .tile h2{font-family:var(--mono);font-weight:600;font-size:16px;margin:0 0 5px;}
+    .tile p{margin:0;font-size:13.5px;color:#333;}
+    .tile p code{font-family:var(--mono);font-size:12.5px;}
+
+    /* crochets de visée RGB : cachés, "accrochent" la tuile au survol/focus */
+    .bracket{position:absolute;width:16px;height:16px;opacity:0;transition:opacity .12s ease;}
+    .bracket::before,.bracket::after{content:"";position:absolute;background:currentColor;}
+    .bracket::before{width:16px;height:2px;} .bracket::after{width:2px;height:16px;}
+    .b-tl{top:8px;left:8px;color:var(--x);}
+    .b-tr{top:8px;right:8px;color:var(--y);} .b-tr::before{right:0;} .b-tr::after{right:0;}
+    .b-bl{bottom:8px;left:8px;color:var(--z);} .b-bl::before{bottom:0;} .b-bl::after{bottom:0;}
+    .b-br{bottom:8px;right:8px;color:var(--ink);} .b-br::before{right:0;bottom:0;} .b-br::after{right:0;bottom:0;}
+    .tile a:hover .bracket,.tile a:focus-visible .bracket{opacity:1;}
+
+    /* ---- Cartouche d'ingénieur ---- */
+    .titleblock{
+      margin-top:34px;
+      border:2px solid var(--ink);
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+    }
+    .field{
+      border-right:2px solid var(--ink);
+      padding:12px 14px;
+    }
+    .field:last-child{border-right:0;}
+    .field .k{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:#888;text-transform:uppercase;}
+    .field .v{font-family:var(--mono);font-size:13px;margin-top:5px;}
+    .field .v a{color:var(--z);text-decoration:none;border-bottom:1px solid var(--z);}
+    .field .v a:hover{background:var(--z);color:#fff;}
+
+    @media (max-width:640px){
+      header{grid-template-columns:1fr;gap:16px;}
+      .titleblock{grid-template-columns:1fr 1fr;}
+      .field:nth-child(2){border-right:0;}
+      .field:nth-child(1),.field:nth-child(2){border-bottom:2px solid var(--ink);}
+    }
+    @media (prefers-reduced-motion:reduce){
+      .bracket{transition:none;}
+    }
+  </style>
+</head>
+<body>
+  <div class="crop tl"></div><div class="crop tr"></div>
+  <div class="crop bl"></div><div class="crop br"></div>
+
+  <main class="sheet">
+    <header>
+      <!-- Le "moment" caractéristique du sujet : un marqueur acquis, axes X/Y/Z plantés -->
+      <svg viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Marqueur détecté avec repère X Y Z">
+        <rect x="10" y="10" width="100" height="100" fill="#000"/>
+        <rect x="26" y="26" width="68" height="68" fill="#fff"/>
+        <!-- motif interne asymétrique (identité du marqueur) -->
+        <rect x="34" y="34" width="20" height="20" fill="#000"/>
+        <rect x="60" y="34" width="12" height="12" fill="#000"/>
+        <rect x="60" y="60" width="26" height="10" fill="#000"/>
+        <rect x="34" y="66" width="10" height="20" fill="#000"/>
+        <!-- repère XYZ planté au centre -->
+        <g stroke-width="3" fill="none">
+          <line x1="60" y1="60" x2="60" y2="30" stroke="#2f9e44"/>
+          <line x1="60" y1="60" x2="88" y2="72" stroke="#e5484d"/>
+          <line x1="60" y1="60" x2="40" y2="78" stroke="#3552d6"/>
+        </g>
+        <circle cx="60" cy="60" r="3.5" fill="#000"/>
+      </svg>
+
+      <div>
+        <div class="ref">TP01 / ST2AWD</div>
+        <h1>WebAR sur marqueur</h1>
+        <p>Six étapes, de la scène 3D pure à l'interface AR interactive.
+           Servez les pages par un serveur (Live Server ou GitHub Pages), ouvrez-les
+           sur téléphone, autorisez la caméra, visez le marqueur.</p>
+      </div>
+    </header>
+
+    <ul class="board">
+      <li class="tile">
+        <a href="exercice1.html">
+          <span class="bracket b-tl"></span><span class="bracket b-tr"></span>
+          <span class="bracket b-bl"></span><span class="bracket b-br"></span>
+          <div class="idx">01</div>
+          <div class="glyph"><svg viewBox="0 0 60 60" fill="none" stroke="#000" stroke-width="2.4">
+            <path d="M14 22 L30 14 L46 22 L30 30 Z"/>
+            <path d="M14 22 L14 42 L30 50 L30 30"/>
+            <path d="M46 22 L46 42 L30 50"/>
+          </svg></div>
+          <h2>Scène 3D</h2>
+          <p>Trois boîtes, un plan, une caméra surélevée. Sans AR.</p>
+        </a>
+      </li>
+
+      <li class="tile">
+        <a href="exercice2.html">
+          <span class="bracket b-tl"></span><span class="bracket b-tr"></span>
+          <span class="bracket b-bl"></span><span class="bracket b-br"></span>
+          <div class="idx">02</div>
+          <div class="glyph"><svg viewBox="0 0 60 60">
+            <rect x="10" y="10" width="40" height="40" fill="#000"/>
+            <rect x="18" y="18" width="24" height="24" fill="#fff"/>
+            <rect x="23" y="23" width="8" height="8" fill="#000"/>
+            <rect x="33" y="33" width="6" height="6" fill="#000"/>
+          </svg></div>
+          <h2>Marqueur Hiro</h2>
+          <p>Boîte semi-transparente qui tourne sur le marqueur.</p>
+        </a>
+      </li>
+
+      <li class="tile">
+        <a href="exercice3.html">
+          <span class="bracket b-tl"></span><span class="bracket b-tr"></span>
+          <span class="bracket b-bl"></span><span class="bracket b-br"></span>
+          <div class="idx">03</div>
+          <div class="glyph"><svg viewBox="0 0 60 60" fill="none" stroke="#000" stroke-width="2.4">
+            <circle cx="28" cy="28" r="7"/>
+            <circle cx="28" cy="28" r="15" stroke-dasharray="3 4"/>
+            <path d="M34 34 L46 46 M46 40 L46 46 L40 46"/>
+          </svg></div>
+          <h2>Clic / Tap</h2>
+          <p>Toucher la boîte : couleur, vitesse et échelle changent.</p>
+        </a>
+      </li>
+
+      <li class="tile">
+        <a href="exercice4.html">
+          <span class="bracket b-tl"></span><span class="bracket b-tr"></span>
+          <span class="bracket b-bl"></span><span class="bracket b-br"></span>
+          <div class="idx">04</div>
+          <div class="glyph"><svg viewBox="0 0 60 60">
+            <rect x="10" y="10" width="40" height="40" fill="#000"/>
+            <rect x="17" y="17" width="26" height="26" fill="#fff"/>
+            <circle cx="30" cy="30" r="9" fill="none" stroke="#000" stroke-width="4"/>
+          </svg></div>
+          <h2>Marqueur perso</h2>
+          <p>Un tore apparaît sur votre motif <code>.patt</code>.</p>
+        </a>
+      </li>
+
+      <li class="tile">
+        <a href="exercice5.html">
+          <span class="bracket b-tl"></span><span class="bracket b-tr"></span>
+          <span class="bracket b-bl"></span><span class="bracket b-br"></span>
+          <div class="idx">05</div>
+          <div class="glyph"><svg viewBox="0 0 60 60" fill="#000">
+            <rect x="10" y="10" width="12" height="12"/><rect x="38" y="10" width="12" height="12"/>
+            <rect x="10" y="38" width="12" height="12"/>
+            <rect x="40" y="40" width="4" height="4"/><rect x="46" y="46" width="4" height="4"/>
+            <rect x="40" y="48" width="4" height="4"/><rect x="48" y="40" width="4" height="4"/>
+            <rect x="26" y="26" width="8" height="8"/>
+          </svg></div>
+          <h2>QR + Hiro</h2>
+          <p>Scanner le QR, puis viser le Hiro placé en son centre.</p>
+        </a>
+      </li>
+
+      <li class="tile">
+        <a href="exercice6.html">
+          <span class="bracket b-tl"></span><span class="bracket b-tr"></span>
+          <span class="bracket b-bl"></span><span class="bracket b-br"></span>
+          <div class="idx">06</div>
+          <div class="glyph"><svg viewBox="0 0 60 60" fill="none" stroke="#000" stroke-width="2.4">
+            <line x1="12" y1="20" x2="48" y2="20"/><circle cx="26" cy="20" r="4" fill="#000"/>
+            <line x1="12" y1="34" x2="48" y2="34"/><circle cx="38" cy="34" r="4" fill="#000"/>
+            <rect x="12" y="44" width="9" height="9" fill="#e5484d" stroke="none"/>
+            <rect x="25" y="44" width="9" height="9" fill="#2f9e44" stroke="none"/>
+            <rect x="38" y="44" width="9" height="9" fill="#3552d6" stroke="none"/>
+          </svg></div>
+          <h2>Overlay UI</h2>
+          <p>Slider de taille et palette de couleurs en surimpression.</p>
+        </a>
+      </li>
+    </ul>
+
+    <!-- Cartouche technique -->
+    <section class="titleblock" aria-label="Informations du projet">
+      <div class="field"><div class="k">Projet</div><div class="v">TP01 — WebAR</div></div>
+      <div class="field"><div class="k">Outils</div><div class="v">A-Frame 1.6.0 · AR.js 3.4.7</div></div>
+      <div class="field"><div class="k">Marqueur</div>
+        <div class="v"><a href="https://jeromeetienne.github.io/AR.js/data/images/HIRO.jpg">HIRO.jpg</a></div></div>
+      <div class="field"><div class="k">QR code</div>
+        <div class="v"><a href="qr-generator.html">Générer</a></div></div>
+    </section>
+  </main>
+</body>
 </html>
